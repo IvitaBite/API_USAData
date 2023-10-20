@@ -10,16 +10,16 @@ class YearCollection
 
     public function __construct(array $years = [])
     {
-        foreach ($years as $year) {
-            $this->add($year);
-        }
+        $this->years = $years;
     }
+
     public function getYears(): array
     {
         return $this->years;
     }
 
-    public  function add(Year $year) {
-        $this->years [] =$year;
+    public function add(Year $year)
+    {
+        $this->years [] = $year;
     }
 }

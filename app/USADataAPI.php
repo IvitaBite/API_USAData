@@ -10,44 +10,41 @@ use Carbon\Carbon;
 
 class USADataAPI
 {
-    private string $apiUrl;
     private Client $http;
 
-    public function __construct(string $apiUrl)
+    public function __construct()
     {
-        $this->apiUrl = $apiUrl;
         $this->http = new Client();
     }
 
-    public function getNationData(string $apiUrl): ?YearCollection
+    public function getNationData(string $nation): ?YearCollection
     {
         try {
-            $response = $this->http->get($apiUrl);
+            $response = $this->http->get("https://datausa.io/api/data?drilldowns=Nation&measures=Population");
         } catch (GuzzleException $e) {
             echo "GuzzleException: " . $e->getMessage() . "\n";
             return null;
         }
 
-        $data = json_decode($response->getBody()->__toStrimg(), true);
+        $data = json_decode($response->getBody()->__toString(), true);
 
-        if ($data === false) {
+        if (!is_array($data)) {
             echo "Error: JSON decoding failed. The response body could not be decoded as JSON.";
             return null;
         }
 
-        if ($data === null) {
-            echo "Error: JSON decoding returned null. The response body may not be valid JSON.";
-            return null;
-        }
+        $yearCollection = new YearCollection();
 
-        $yearCollection= new YearCollection();
+        if (isset($data["data"])) {
+            foreach ($data["data"] as $entry) {
+                if ($entry["Nation"] === $nation) {
+                    $year = (int)$entry["Year"]; // Cast to int
+                    $population = (int)$entry["Population"]; // Cast to int
 
-        foreach ($data as $yearData) {
-            $year = new Year(
-                $yearData["Year"],
-                $yearData["Population"],
-            );
-            $yearCollection->add($year);
+                    $yearObject = new Year($year, $population);
+                    $yearCollection->add($yearObject);
+                }
+            }
         }
         return $yearCollection;
     }
@@ -78,7 +75,7 @@ class USADataAPI
         return $population;
     }
 
-    private function getPopulationForYear(array $populationData, int $year)
+    private function getPopulationForYear(array $populationData, int $year): int
     {
         foreach ($populationData as $data) {
             if ($data->getYear() === $year) {
